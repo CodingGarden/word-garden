@@ -29,8 +29,10 @@ const letters = document.querySelector('#letters');
 const guessing = document.querySelector('#guessing');
 const guessInput = document.querySelector('#guess');
 const submitGuessButton = document.querySelector('#submit-guess');
+const eventLog = document.querySelector('#event-log');
 
-submitGuessButton.addEventListener('click', () => {
+guessing.addEventListener('submit', (e) => {
+  e.preventDefault();
   if (guessInput.value) {
     socket.emit('guess-letter', { letter: guessInput.value.trim() });
     guessInput.value = '';
@@ -43,7 +45,9 @@ function setName(name) {
 
 socket.on('connect', () => {
   if (!localState.name) {
-    localState.name = prompt('What is your name?');
+    while (!localState.name) {
+      localState.name = prompt('What is your name?');
+    }
   }
   setName(localState.name);
   if (localState.teamId) {
@@ -51,7 +55,7 @@ socket.on('connect', () => {
   }
 
   socket.emit('game-state', '', (state) => {
-    console.log(state);
+    updateGame(state);
   });
 });
 
@@ -77,25 +81,38 @@ function updateLetters(guessedLetters) {
 function allowCurrentTeamGuess(currentTeam, roundOver) {
   guessInput.value = '';
   if (roundOver) {
-    guessing.style.display = 'none';
+    guessing.style.visibility = 'hidden';
     return;
   }
   if (localState.teamId == currentTeam) {
-    guessing.style.display = 'flex';
+    guessing.style.visibility = 'visible';
+    setTimeout(() => {
+      guessInput.focus(); 
+    });
   } else {
-    guessing.style.display = 'none';
+    guessing.style.visibility = 'hidden';
   }
 }
 
-socket.on('game-state', (state) => {
+function updateGame(state) {
   updateTeamList(state, team1List, 1);
   updateTeamList(state, team2List, 2);
   updateLetters(state.guessedLetters);
   allowCurrentTeamGuess(state.currentTeam, state.roundOver);
   team1score.textContent = state.score[1];
   team2score.textContent = state.score[2];
-});
+}
+
+socket.on('game-state', updateGame);
 
 socket.on('game-error', (error) => {
   console.error(error);
 });
+
+function addEventLog(event) {
+  const eventElement = document.createElement('p');
+  eventElement.textContent = event;
+  eventLog.prepend(eventElement);
+}
+
+socket.on('game-event', addEventLog);

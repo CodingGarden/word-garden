@@ -15,10 +15,10 @@
     <div id="letters">
 
     </div>
-    <div id="guessing">
+    <form id="guessing">
       <input id="guess" maxlength="1" type="text">
-      <button id="submit-guess" class="team-select">Submit Guess</button>
-    </div>
+      <button type="submit" id="submit-guess" class="team-select">Guess</button>
+    </form>
     <div id="pre-game">
       <div class="team-select">
         <button data-team-id="1">Join Team 1</button>
@@ -34,6 +34,9 @@
 
         </div>
       </div>
+    </div>
+    <div id="event-log">
+
     </div>
   </main>
   <script src="/socket.io/socket.io.js"></script>

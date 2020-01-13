@@ -19,6 +19,7 @@ function createInitialGuess(word) {
  * @readonly void
  */
 function init(server) {
+  const teamTimeoutMS = 30000;
   const io = socketIO(server);
 
   const serverState = {
@@ -44,18 +45,30 @@ function init(server) {
 
   const emitGameState = () => io.emit('game-state', gameState);
 
+  function gameEvent(event) {
+    io.emit('game-event', event);
+  }
+
+  let teamTimeout = setTimeout(() => {
+    gameEvent('Team timeout. Next turn.');
+    nextTeam();
+  }, teamTimeoutMS);
   function nextTeam() {
+    if (teamTimeout) clearTimeout(teamTimeout);
     if (gameState.currentTeam == '1') {
       gameState.currentTeam = '2';
     } else {
       gameState.currentTeam = '1';
     }
     emitGameState();
+    gameEvent(`Team ${gameState.currentTeam}'s turn.`);
+    teamTimeout = setTimeout(() => {
+      gameEvent('Team timeout. Next turn.');
+      nextTeam();
+    }, teamTimeoutMS);
   }
 
   io.on('connection', (socket) => {
-    console.log('a user connected');
-
     function getPlayer() {
       return gameState.players[socket.id];
     }
@@ -84,7 +97,6 @@ function init(server) {
         name,
       };
 
-      console.log(gameState.players);
       emitGameState();
     });
 
@@ -94,10 +106,10 @@ function init(server) {
       }
       const { teamId } = settings;
       if (!teamId || (typeof teamId !== 'string' && typeof teamId !== 'number')) {
-        console.log('invalid teamId', teamId);
+        gameError('Invalid team ID.');
         return;
       }
-      // if (teamId != '1' && teamId != '2') {
+
       if (teamId in gameState.teams === false) {
         gameError('Invalid team ID.');
         return;
@@ -114,7 +126,6 @@ function init(server) {
       console.log(player.name, 'joined team', teamId);
       gameState.teams[teamId][socket.id] = player;
       player.teamId = teamId;
-      console.log(gameState.teams);
       emitGameState();
     });
 
@@ -149,13 +160,16 @@ function init(server) {
             }
           });
           gameState.score[gameState.currentTeam] += 1;
+          gameEvent(`Team ${player.teamId}: ${player.name} correct guess "${letter}" +1`)
         } else {
           gameState.score[gameState.currentTeam] -= 1;
+          gameEvent(`Team ${player.teamId}: ${player.name} incorrect guess "${letter}" -1`)
         }
 
         if (gameState.guessedLetters.includes('_')) {
           nextTeam();
         } else {
+          gameEvent('Round over. Next round will begin in 10 seconds.');
           gameState.roundOver = true;
           emitGameState();
           setTimeout(() => {
