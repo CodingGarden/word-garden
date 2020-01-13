@@ -3,7 +3,7 @@ const socketIO = require('socket.io');
 /** @type {string[]} */
 let words = require('./webProgrammingTerms.json');
 
-words = words.filter((word) => word.length >= 5).map(word => word.toUpperCase());
+words = words.filter((word) => word.length >= 5).map((word) => word.toUpperCase());
 
 const getRandomWord = () => words[Math.floor(Math.random() * words.length)];
 
@@ -41,6 +41,10 @@ function init(server) {
       1: 0,
       2: 0,
     },
+    guessedLettersPoints: { // TODO: Change var name @lazynessmind;
+      1: 0,
+      2: 0,
+    },
   };
 
   const emitGameState = () => io.emit('game-state', gameState);
@@ -53,6 +57,7 @@ function init(server) {
     gameEvent('Team timeout. Next turn.');
     nextTeam();
   }, teamTimeoutMS);
+
   function nextTeam() {
     if (teamTimeout) clearTimeout(teamTimeout);
     if (gameState.currentTeam == '1') {
@@ -66,6 +71,25 @@ function init(server) {
       gameEvent('Team timeout. Next turn.');
       nextTeam();
     }, teamTimeoutMS);
+  }
+
+  /*
+  * Check who score more rounds then increase the score;
+  * if draw: 5 points
+  * else: 10 points to the winner
+  */
+  function addRoundPoints() {
+    if (gameState.guessedLettersPoints[1] == gameState.guessedLettersPoints[2]) {
+      gameState.score[1] += 5;
+      gameState.score[2] += 5;
+      gameEvent(`Both teams guessed ${gameState.guessedLettersPoints[1]} letters. Score increased by 5 points..`);
+    } else if (gameState.guessedLettersPoints[1] > gameState.guessedLettersPoints[2]) {
+      gameState.score[1] += 10;
+      gameEvent(`Team 1 guessed ${gameState.guessedLettersPoints[1]} letters. Score increased by 10 points.`);
+    } else {
+      gameState.score[2] += 10;
+      gameEvent(`Team 2 guessed ${gameState.guessedLettersPoints[2]} letters. Score increased by 10 points..`);
+    }
   }
 
   io.on('connection', (socket) => {
@@ -160,10 +184,11 @@ function init(server) {
             }
           });
           gameState.score[gameState.currentTeam] += 1;
-          gameEvent(`Team ${player.teamId}: ${player.name} correct guess "${letter}" +1`)
+          gameState.guessedLettersPoints[gameState.currentTeam] += 1;
+          gameEvent(`Team ${player.teamId}: ${player.name} correct guess "${letter}" +1`);
         } else {
           gameState.score[gameState.currentTeam] -= 1;
-          gameEvent(`Team ${player.teamId}: ${player.name} incorrect guess "${letter}" -1`)
+          gameEvent(`Team ${player.teamId}: ${player.name} incorrect guess "${letter}" -1`);
         }
 
         if (gameState.guessedLetters.includes('_')) {
@@ -171,6 +196,7 @@ function init(server) {
         } else {
           gameEvent('Round over. Next round will begin in 10 seconds.');
           gameState.roundOver = true;
+          addRoundPoints();
           emitGameState();
           setTimeout(() => {
             serverState.currentWord = getRandomWord();
