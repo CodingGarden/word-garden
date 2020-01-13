@@ -66,6 +66,7 @@ function init(server) {
       gameState.currentTeam = '1';
     }
     emitGameState();
+    console.log(gameState);
     gameEvent(`Team ${gameState.currentTeam}'s turn.`);
     teamTimeout = setTimeout(() => {
       gameEvent('Team timeout. Next turn.');
@@ -74,9 +75,10 @@ function init(server) {
   }
 
   /*
-  * Check who score more rounds then increase the score;
+  * Check who score more letters then increase the score;
   * if draw: 5 points
   * else: 10 points to the winner
+  * @lazynessmind
   */
   function addRoundPoints() {
     if (gameState.guessedLettersPoints[1] == gameState.guessedLettersPoints[2]) {
@@ -90,6 +92,8 @@ function init(server) {
       gameState.score[2] += 10;
       gameEvent(`Team 2 guessed ${gameState.guessedLettersPoints[2]} letters. Score increased by 10 points..`);
     }
+    gameState.guessedLettersPoints[1] = 0;
+    gameState.guessedLettersPoints[2] = 0;
   }
 
   io.on('connection', (socket) => {
