@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Word Garden</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <main>
+    <div class="logo">
+      <img src="https://i.imgur.com/1JpGn3L.png" width="100%">
+    </div>
+    <div id="letters">
+
+    </div>
+    <div id="guessing">
+      <input id="guess" maxlength="1" type="text">
+      <button id="submit-guess" class="team-select">Submit Guess</button>
+    </div>
+    <div id="pre-game">
+      <div class="team-select">
+        <button data-team-id="1">Join Team 1</button>
+        <h1 class="team-name">Team 1 <span id="team-1-score"></span></h1>
+        <div id="team-1-list" class="team-list">
+
+        </div>
+      </div>
+      <div class="team-select">
+        <button data-team-id="2">Join Team 2</button>
+        <h1 class="team-name">Team 2 <span id="team-2-score"></span></h1>
+        <div id="team-2-list" class="team-list">
+
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/app.js" type="module"></script>
+</body>
+</html>
